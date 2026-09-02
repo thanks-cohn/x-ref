@@ -1,0 +1,155 @@
+# X-REF port manifest example
+#
+# This file is intentionally descriptive rather than a frozen schema.
+# It establishes the information every agent-assisted port should record.
+
+xref_version: "0.1-draft"
+
+project:
+  name: "example-kernel"
+  source_repository: "https://example.invalid/example-kernel"
+  source_revision: "SOURCE_COMMIT_SHA"
+
+port:
+  id: "example-kernel-x86_64-riscv64"
+  source_arch: "x86_64"
+  target_arch: "riscv64"
+  target_platform: "qemu-virt"
+  status: "ANALYZED"
+  highest_proved_level: "L0_ANALYZED"
+
+pressure:
+  current: "boot to first kernel console line"
+  next_success_condition: "RV64 prints the same canonical boot identity as x86_64"
+  next_causal_blocker: "not yet established"
+
+inventory:
+  total_arch_dependencies: 0
+  isolated_dependencies: 0
+  direct_assembly_sites: 0
+  privileged_instruction_sites: 0
+  architecture_intrinsic_sites: 0
+  ordering_review_sites: 0
+  device_specific_sites: 0
+  unknown_sites: 0
+
+contracts:
+  - id: "XREF-MM-001"
+    name: "address-space-activate"
+    family: "address-space"
+    maturity: "DISCOVERED"
+    required: true
+    source:
+      implementation: "arch/x86_64/mm/address_space.c"
+      evidence: []
+    target:
+      implementation: "arch/riscv64/mm/address_space.c"
+      evidence: []
+    known_non_equivalences: []
+
+  - id: "XREF-CPU-004"
+    name: "context-switch"
+    family: "context"
+    maturity: "DISCOVERED"
+    required: true
+    source:
+      implementation: "arch/x86_64/context.S"
+      evidence: []
+    target:
+      implementation: "arch/riscv64/context.S"
+      evidence: []
+    known_non_equivalences: []
+
+workstreams:
+  - id: "paging"
+    owner: "unassigned"
+    scope:
+      - "page-table representation"
+      - "address-space activation"
+      - "translation invalidation"
+    status: "READY"
+    blocked_by: []
+
+  - id: "traps"
+    owner: "unassigned"
+    scope:
+      - "exception entry"
+      - "interrupt entry"
+      - "userspace return"
+    status: "BLOCKED"
+    blocked_by:
+      - "paging"
+
+  - id: "ordering"
+    owner: "unassigned"
+    scope:
+      - "atomic operations"
+      - "x86 TSO assumption audit"
+      - "RVWMO conformance"
+    status: "READY"
+    blocked_by: []
+
+evidence:
+  source_regression:
+    command: "make test ARCH=x86_64"
+    status: "NOT_RUN"
+    artifact: null
+
+  target_unit:
+    command: "make test ARCH=riscv64"
+    status: "NOT_RUN"
+    artifact: null
+
+  target_boot:
+    command: "make run ARCH=riscv64 PLATFORM=qemu-virt"
+    status: "NOT_RUN"
+    artifact: null
+
+  differential:
+    command: "./tools/xref-diff-evidence"
+    status: "NOT_RUN"
+    artifact: null
+
+invariants:
+  - id: "W_X_EXCLUSIVE"
+    description: "No writable executable mapping unless explicitly justified by a contract."
+    source_status: "UNKNOWN"
+    target_status: "UNKNOWN"
+
+  - id: "USER_KERNEL_ISOLATION"
+    description: "Userspace cannot access supervisor/kernel-only mappings."
+    source_status: "UNKNOWN"
+    target_status: "UNKNOWN"
+
+  - id: "ORDERING_EXPLICIT"
+    description: "Synchronization correctness does not depend on undocumented x86 ordering."
+    source_status: "UNKNOWN"
+    target_status: "UNKNOWN"
+
+non_equivalence_ledger: []
+
+agent_batches:
+  - id: "batch-001"
+    objective: "inventory direct x86 architecture dependencies"
+    inputs:
+      - "kernel source tree"
+    outputs:
+      - "inventory report"
+      - "classification report"
+    success_gate: "all discovered sites classified or explicitly UNKNOWN"
+    status: "READY"
+
+  - id: "batch-002"
+    objective: "isolate first boot-critical semantic contract"
+    depends_on:
+      - "batch-001"
+    success_gate: "x86 regression passes through new contract"
+    status: "BLOCKED"
+
+claims:
+  allowed:
+    - "architecture inventory exists"
+  forbidden_until_proved:
+    - "RV64 port works"
+    - "kernel is architecture portable"
+    - "source and target are behaviorally equivalent"
