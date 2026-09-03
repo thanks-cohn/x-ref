@@ -1,0 +1,39 @@
+[
+  {
+    "id": "XREF-CPU-001", "name": "interrupt-state-set", "family": "interrupt",
+    "intent": "Set whether maskable interrupts may be delivered on the current hardware thread.",
+    "inputs": ["enabled"], "outputs": [], "preconditions": ["caller has sufficient privilege"],
+    "postconditions": ["interrupt delivery state matches enabled before return"], "ordering": "compiler and machine effects must not cross the state transition when doing so changes observable interrupt behavior",
+    "privilege": "kernel", "failure_semantics": "infallible for a conforming backend",
+    "source_mapping": "x86-64 CLI/STI and flags state", "target_mapping": "RV64 supervisor interrupt-enable state",
+    "known_non_equivalences": [], "maturity": "DEFINED", "source_evidence": [], "target_evidence": []
+  },
+  {
+    "id": "XREF-MM-001", "name": "address-space-activate", "family": "address-space",
+    "intent": "Make a supplied address-space object the active translation context for the current hardware thread.",
+    "inputs": ["address space"], "outputs": ["status"], "preconditions": ["root and required kernel mappings are valid"],
+    "postconditions": ["subsequent translations use the supplied space", "forbidden stale translations are inaccessible"],
+    "ordering": "mapping publication precedes activation; required translation invalidation completes before return",
+    "privilege": "kernel", "failure_semantics": "invalid roots are rejected without partial activation",
+    "source_mapping": "x86-64 CR3/PCID/invalidation policy", "target_mapping": "RV64 SATP/ASID/SFENCE.VMA policy",
+    "known_non_equivalences": [], "maturity": "DEFINED", "source_evidence": [], "target_evidence": []
+  },
+  {
+    "id": "XREF-MEM-002", "name": "translation-invalidate", "family": "translation",
+    "intent": "Make obsolete translations unusable within a requested semantic scope.",
+    "inputs": ["address space", "address", "scope"], "outputs": ["status"], "preconditions": ["scope describes a valid backend operation"],
+    "postconditions": ["no invalidated stale translation may be observed after return"], "ordering": "page-table updates happen before invalidation completion",
+    "privilege": "kernel", "failure_semantics": "unsupported scopes are reported",
+    "source_mapping": "x86-64 INVLPG/INVPCID/CR3 policy", "target_mapping": "RV64 SFENCE.VMA scope policy",
+    "known_non_equivalences": [], "maturity": "DEFINED", "source_evidence": [], "target_evidence": []
+  },
+  {
+    "id": "XREF-ORD-001", "name": "memory-order-enforce", "family": "ordering",
+    "intent": "Enforce an explicitly requested ordering relation for shared-memory operations.",
+    "inputs": ["memory order"], "outputs": [], "preconditions": ["the requested order describes the caller's synchronization intent"],
+    "postconditions": ["operations are ordered at least as strongly as requested"], "ordering": "relaxed, acquire, release, acquire-release, or sequentially consistent",
+    "privilege": "any", "failure_semantics": "infallible for supported order values",
+    "source_mapping": "x86-64 compiler barriers and fences as required", "target_mapping": "RV64 fences and atomic ordering as required",
+    "known_non_equivalences": ["x86 TSO may satisfy relations that RVWMO requires code to express"], "maturity": "DEFINED", "source_evidence": [], "target_evidence": []
+  }
+]

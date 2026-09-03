@@ -319,6 +319,12 @@ x-ref/
 
 This repository begins as a specification and porting framework. Implementations and automation should grow only where they strengthen the central contract/evidence model.
 
+The first implementation foundation is now available as a small Python CLI.
+It validates durable port manifests, inventories and conservatively classifies
+C/C++ architecture debt, exposes a semantic contract registry, and suggests
+deterministic bounded review batches. See [`docs/TOOLING.md`](docs/TOOLING.md)
+for commands, limitations, and the next causal milestone.
+
 ## Relationship to Z-REF
 
 X-REF is spiritually downstream of **Z-REF**.
